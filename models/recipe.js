@@ -9,29 +9,67 @@ module.exports = (sequelize, DataTypes) => {
      */
     static associate(models) {
       // Relasi dengan User
-      // Recipe.belongsTo(models.User, {
-      //   foreignKey: 'user_id',
-      //   as: 'user',
-      // })
-      // // Relasi dengan Category
-      // Recipe.belongsTo(models.Category, {
-      //   foreignKey: 'category_id',
-      //   as: 'category',
-      // })
+      Recipe.belongsTo(models.User, {
+        foreignKey: 'user_id',
+        as: 'user',
+      })
+      // Relasi dengan Category
+      Recipe.belongsTo(models.Categories, {
+        foreignKey: 'category_id',
+        as: 'category',
+      })
+      Recipe.hasMany(models.Comment, {
+        foreignKey: 'recipe_id',
+        as: 'comment',
+      })
+      Recipe.hasMany(models.Rating, {
+        foreignKey: 'recipe_id',
+        as: 'rating',
+      })
     }
   }
   Recipe.init(
     {
-      user_id: DataTypes.INTEGER,
-      title: DataTypes.STRING,
-      description: DataTypes.TEXT,
-      ingredients: DataTypes.TEXT,
-      instructions: DataTypes.TEXT,
-      cooking_time: DataTypes.STRING,
-      serving_size: DataTypes.STRING,
-      difficulty_level: DataTypes.STRING,
-      category_id: DataTypes.INTEGER,
-      image_url: DataTypes.STRING,
+      user_id: {
+        type: DataTypes.INTEGER,
+        allowNull: false,
+      },
+      title: {
+        type: DataTypes.STRING,
+        allowNull: false,
+      },
+      description: {
+        type: DataTypes.TEXT,
+        allowNull: false,
+      },
+      ingredients: {
+        type: DataTypes.TEXT,
+        allowNull: false,
+      },
+      instructions: {
+        type: DataTypes.TEXT,
+        allowNull: false,
+      },
+      cooking_time: {
+        type: DataTypes.STRING,
+        allowNull: false,
+      },
+      serving_size: {
+        type: DataTypes.STRING,
+        allowNull: false,
+      },
+      difficulty_level: {
+        type: DataTypes.STRING,
+        allowNull: false,
+      },
+      category_id: {
+        type: DataTypes.INTEGER,
+        allowNull: false,
+      },
+      image_url: {
+        type: DataTypes.STRING,
+        allowNull: true,
+      },
     },
     {
       sequelize,
