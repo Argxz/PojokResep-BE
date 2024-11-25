@@ -33,6 +33,11 @@ module.exports = (sequelize, DataTypes) => {
       value: {
         type: DataTypes.INTEGER,
         allowNull: false,
+        validate: {
+          min: 1, // Nilai minimum
+          max: 5, // Nilai maksimum
+          isInt: true, // Harus berupa angka bulat
+        },
       },
     },
     {
