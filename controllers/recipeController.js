@@ -1,4 +1,5 @@
 const { Recipe, User, Categories } = require('../models')
+const recipeValidation = require('../validations/recipe')
 
 exports.getAllRecipes = async (req, res) => {
   try {
@@ -52,33 +53,8 @@ exports.getRecipeById = async (req, res) => {
 }
 
 exports.createRecipe = async (req, res) => {
-  const {
-    user_id,
-    title,
-    description,
-    ingredients,
-    instructions,
-    cooking_time,
-    serving_size,
-    difficulty_level,
-    category_id,
-  } = req.body
-
-  if (
-    !user_id ||
-    !title ||
-    !description ||
-    !ingredients ||
-    !instructions ||
-    !cooking_time ||
-    !serving_size ||
-    !difficulty_level ||
-    !category_id
-  ) {
-    return res
-      .status(400)
-      .json({ error: 'All required fields must be provided' })
-  }
+  // Validasi payload sebelum proses lebih lanjut
+  recipeValidation.validateCreatePayload(req.body)
 
   try {
     const recipes = await Recipe.create(req.body)
@@ -92,70 +68,73 @@ exports.createRecipe = async (req, res) => {
 }
 
 exports.updateRecipe = async (req, res) => {
-  const { id } = req.params // ID Recipe yang akan diupdate
-  const {
-    title,
-    description,
-    ingredients,
-    instructions,
-    cooking_time,
-    serving_size,
-    difficulty_level,
-    category_id,
-    image_url,
-  } = req.body // Data yang akan diupdate
+  const { id } = req.params
+  const updateData = req.body
 
   try {
-    // Mencari Recipe berdasarkan ID
-    const recipes = await Recipe.findByPk(id)
+    // Validasi payload update (tambahkan await)
+    await recipeValidation.validateUpdatePayload(updateData)
 
-    if (!recipes) {
+    // Mencari Recipe berdasarkan ID
+    const recipe = await Recipe.findByPk(id)
+
+    if (!recipe) {
       return res.status(404).json({ error: 'Recipe not found' })
     }
 
-    // Update Recipe tanpa mengubah user_id
-    await recipes.update({
-      title,
-      description,
-      ingredients,
-      instructions,
-      cooking_time,
-      serving_size,
-      difficulty_level,
-      category_id,
-      image_url,
-    })
+    // Pastikan hanya pemilik yang bisa update (opsional)
+    // if (recipe.user_id !== req.user.id) {
+    //   return res
+    //     .status(403)
+    //     .json({ error: 'Not authorized to update this recipe' })
+    // }
 
-    return res
-      .status(200)
-      .json({ message: 'Recipe updated successfully', recipes })
+    // Update Recipe
+    await recipe.update(updateData)
+
+    return res.status(200).json({
+      message: 'Recipe updated successfully',
+      recipe,
+    })
   } catch (error) {
     console.error(error)
-    return res
-      .status(500)
-      .json({ error: 'An error occurred while updating the recipe' })
+    return res.status(400).json({
+      error: error.message || 'An error occurred while updating the recipe',
+    })
   }
 }
 
 exports.deleteRecipe = async (req, res) => {
-  const { id } = req.params // Mendapatkan ID dari parameter URL
+  const { id } = req.params
+  const userId = req.user.id // Asumsikan Anda memiliki middleware autentikasi
 
   try {
-    // Mencari Recipe berdasarkan ID
-    const recipes = await Recipe.findByPk(id)
+    // Validasi ID
+    RecipeValidation.validateDeletePayload({ id: Number(id) })
 
-    if (!recipes) {
-      return res.status(404).json({ error: 'Recipe not found' })
+    // Mencari Recipe berdasarkan ID dan user_id
+    const recipe = await Recipe.findOne({
+      where: {
+        id: id,
+        user_id: userId, // Pastikan yang menghapus adalah pemilik recipe
+      },
+    })
+
+    if (!recipe) {
+      return res.status(404).json({
+        error:
+          'Recipe not found or you are not authorized to delete this recipe',
+      })
     }
 
     // Menghapus Recipe
-    await recipes.destroy()
+    await recipe.destroy()
 
     return res.status(200).json({ message: 'Recipe deleted successfully' })
   } catch (error) {
     console.error(error)
-    return res.status(500).json({
-      error: 'An error occurred while deleting the recipe',
+    return res.status(400).json({
+      error: error.message || 'An error occurred while deleting the recipe',
     })
   }
 }
