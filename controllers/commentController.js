@@ -1,4 +1,5 @@
 const { Comment, Recipe, User } = require('../models')
+const commentValidation = require('../validations/comment') // Pastikan Anda mengimpor validasi yang sudah dibuat
 
 exports.getAllComments = async (req, res) => {
   try {
@@ -18,34 +19,33 @@ exports.getAllComments = async (req, res) => {
     })
     res.json({ status: 'OK', data: comments })
   } catch (error) {
+    console.error(error)
     res.status(500).json({ error: error.message })
   }
 }
 
 exports.createComment = async (req, res) => {
-  const { recipe_id, user_id, content } = req.body
-
-  if (!recipe_id || !user_id || !content) {
-    return res
-      .status(400)
-      .json({ error: 'All required fields must be provided' })
-  }
+  const createData = req.body
 
   try {
-    const comments = await Comment.create(req.body)
+    // Validasi payload menggunakan Joi
+    await commentValidation.validateCreatePayload(createData)
+
+    const comment = await Comment.create(createData)
     res.status(201).json({
-      message: 'comments created successfully',
-      data: comments,
+      message: 'Comment created successfully',
+      data: comment,
     })
   } catch (error) {
-    res.status(500).json({ error: error.message })
+    console.error(error)
+    res.status(400).json({ error: error.message || 'Failed to create comment' })
   }
 }
 
 exports.getCommentsByRecipeId = async (req, res) => {
-  try {
-    const { recipe_id } = req.params
+  const { recipe_id } = req.params
 
+  try {
     // Validasi input
     if (!recipe_id) {
       return res.status(400).json({ error: 'recipe_id is required' })
@@ -53,7 +53,14 @@ exports.getCommentsByRecipeId = async (req, res) => {
 
     // Cari komentar berdasarkan recipe_id
     const comments = await Comment.findAll({
-      where: { recipe_id }, // Sequelize akan otomatis memetakan
+      where: { recipe_id },
+      include: [
+        {
+          model: User,
+          as: 'user',
+          attributes: ['username'],
+        },
+      ],
     })
 
     // Jika tidak ada komentar
@@ -64,7 +71,7 @@ exports.getCommentsByRecipeId = async (req, res) => {
     }
 
     // Kembalikan data komentar
-    res.status(200).json(comments)
+    res.status(200).json({ status: 'OK', data: comments })
   } catch (error) {
     console.error(error)
     res.status(500).json({ error: 'An error occurred while fetching comments' })
@@ -72,14 +79,12 @@ exports.getCommentsByRecipeId = async (req, res) => {
 }
 
 exports.updateCommentContent = async (req, res) => {
-  try {
-    const { id } = req.params // ID dari komentar yang akan diupdate
-    const { content } = req.body // Data baru untuk kolom 'content'
+  const { id } = req.params // ID dari komentar yang akan diupdate
+  const { content } = req.body // Data baru untuk kolom 'content'
 
+  try {
     // Validasi input
-    if (!content) {
-      return res.status(400).json({ error: 'Content is required' })
-    }
+    await commentValidation.validateUpdatePayload({ content })
 
     // Cari komentar berdasarkan ID
     const comment = await Comment.findByPk(id)
@@ -88,6 +93,13 @@ exports.updateCommentContent = async (req, res) => {
       return res.status(404).json({ error: 'Comment not found' })
     }
 
+    // Pastikan hanya pemilik komentar yang bisa update
+    // if (comment.user_id !== req.user.id) {
+    //   return res
+    //     .status(403)
+    //     .json({ error: 'Not authorized to update this comment' })
+    // }
+
     // Perbarui hanya kolom 'content'
     comment.content = content
     await comment.save()
@@ -95,9 +107,9 @@ exports.updateCommentContent = async (req, res) => {
     res.status(200).json({ message: 'Comment updated successfully', comment })
   } catch (error) {
     console.error(error)
-    res
-      .status(500)
-      .json({ error: 'An error occurred while updating the comment' })
+    res.status(400).json({
+      error: error.message || 'An error occurred while updating the comment',
+    })
   }
 }
 
@@ -113,6 +125,13 @@ exports.deleteComment = async (req, res) => {
       return res.status(404).json({ error: 'Comment not found' })
     }
 
+    // Pastikan hanya pemilik komentar yang bisa menghapus
+    // if (comment.user_id !== req.user.id) {
+    //   return res
+    //     .status(403)
+    //     .json({ error: 'Not authorized to delete this comment' })
+    // }
+
     // Hapus komentar
     await comment.destroy()
 
@@ -125,7 +144,7 @@ exports.deleteComment = async (req, res) => {
     console.error('Error deleting comment:', error)
 
     // Cek apakah error terkait constraint (misalnya foreign key)
-    if (error.name === 'SequelizeForeignKeyConstraintError') {
+    if (error.name === ' SequelizeForeignKeyConstraintError') {
       return res.status(400).json({
         error: 'Cannot delete comment. It is being used by other records.',
       })
