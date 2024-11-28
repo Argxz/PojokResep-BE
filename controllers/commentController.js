@@ -80,10 +80,10 @@ exports.getCommentsByRecipeId = async (req, res) => {
 
 exports.updateCommentContent = async (req, res) => {
   const { id } = req.params // ID dari komentar yang akan diupdate
-  const { content } = req.body // Data baru untuk kolom 'content'
+  const { content, user_id } = req.body // Data baru untuk kolom 'content'
 
   try {
-    // Validasi input
+    // Validasi input menggunakan validasi yang sudah ada
     await commentValidation.validateUpdatePayload({ content })
 
     // Cari komentar berdasarkan ID
@@ -93,21 +93,42 @@ exports.updateCommentContent = async (req, res) => {
       return res.status(404).json({ error: 'Comment not found' })
     }
 
+    // Jika req.user ada (autentikasi aktif), gunakan id dari sana
+    // Jika tidak, gunakan user_id dari body request
+    const userId = req.user ? req.user.id : user_id
+
+    if (!userId) {
+      return res.status(400).json({ error: 'User ID is required' })
+    }
+
     // Pastikan hanya pemilik komentar yang bisa update
-    // if (comment.user_id !== req.user.id) {
-    //   return res
-    //     .status(403)
-    //     .json({ error: 'Not authorized to update this comment' })
-    // }
+    // Konversi kedua nilai ke string untuk perbandingan yang konsisten
+    if (String(comment.user_id) !== String(userId)) {
+      return res
+        .status(403)
+        .json({ error: 'Not authorized to update this comment' })
+    }
+    console.log(
+      'comment.user_id:',
+      comment.user_id,
+      'type:',
+      typeof comment.user_id,
+    )
+    console.log('userId:', userId, 'type:', typeof userId)
 
     // Perbarui hanya kolom 'content'
     comment.content = content
     await comment.save()
 
-    res.status(200).json({ message: 'Comment updated successfully', comment })
+    res.status(200).json({
+      status: 'OK',
+      message: 'Comment updated successfully',
+      data: comment,
+    })
   } catch (error) {
     console.error(error)
     res.status(400).json({
+      status: 'Error',
       error: error.message || 'An error occurred while updating the comment',
     })
   }
@@ -125,26 +146,35 @@ exports.deleteComment = async (req, res) => {
       return res.status(404).json({ error: 'Comment not found' })
     }
 
+    // Jika req.user ada (autentikasi aktif), gunakan id dari sana
+    // Jika tidak, gunakan user_id dari body request
+    const userId = req.user ? req.user.id : req.body.user_id
+
+    if (!userId) {
+      return res.status(400).json({ error: 'User ID is required' })
+    }
+
     // Pastikan hanya pemilik komentar yang bisa menghapus
-    // if (comment.user_id !== req.user.id) {
-    //   return res
-    //     .status(403)
-    //     .json({ error: 'Not authorized to delete this comment' })
-    // }
+    if (String(comment.user_id) !== String(userId)) {
+      return res
+        .status(403)
+        .json({ error: 'Not authorized to delete this comment' })
+    }
 
     // Hapus komentar
     await comment.destroy()
 
     // Kirim respons sukses
     res.status(200).json({
+      status: 'OK',
       message: 'Comment deleted successfully',
-      data: comment, // Jika ingin mengembalikan detail komentar yang dihapus
+      data: { id: comment.id, content: comment.content }, // Mengembalikan detail komentar yang dihapus
     })
   } catch (error) {
     console.error('Error deleting comment:', error)
 
     // Cek apakah error terkait constraint (misalnya foreign key)
-    if (error.name === ' SequelizeForeignKeyConstraintError') {
+    if (error.name === 'SequelizeForeignKeyConstraintError') {
       return res.status(400).json({
         error: 'Cannot delete comment. It is being used by other records.',
       })
@@ -152,7 +182,8 @@ exports.deleteComment = async (req, res) => {
 
     // Error umum
     res.status(500).json({
-      error: 'An error occurred while deleting the comment',
+      status: 'Error',
+      error: error.message || 'An error occurred while deleting the comment',
     })
   }
 }

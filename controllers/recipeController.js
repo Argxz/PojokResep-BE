@@ -82,12 +82,15 @@ exports.updateRecipe = async (req, res) => {
       return res.status(404).json({ error: 'Recipe not found' })
     }
 
-    // Pastikan hanya pemilik yang bisa update (opsional)
-    // if (recipe.user_id !== req.user.id) {
-    //   return res
-    //     .status(403)
-    //     .json({ error: 'Not authorized to update this recipe' })
-    // }
+    // Jika req.user ada (autentikasi aktif), gunakan id dari sana
+    const userId = req.user ? req.user.id : updateData.user_id
+
+    // Pastikan hanya pemilik yang bisa update
+    if (String(recipe.user_id) !== String(userId)) {
+      return res
+        .status(403)
+        .json({ error: 'Not authorized to update this recipe' })
+    }
 
     // Update Recipe
     await recipe.update(updateData)
@@ -106,33 +109,47 @@ exports.updateRecipe = async (req, res) => {
 
 exports.deleteRecipe = async (req, res) => {
   const { id } = req.params
-  const userId = req.user.id // Asumsikan Anda memiliki middleware autentikasi
+  const userId = req.body.user_id // Ambil user_id dari body permintaan
 
   try {
-    // Validasi ID
-    RecipeValidation.validateDeletePayload({ id: Number(id) })
-
-    // Mencari Recipe berdasarkan ID dan user_id
-    const recipe = await Recipe.findOne({
-      where: {
-        id: id,
-        user_id: userId, // Pastikan yang menghapus adalah pemilik recipe
-      },
+    // Validasi ID dan user_id
+    await recipeValidation.validateDeletePayload({
+      id: Number(id),
+      user_id: userId,
     })
 
+    // Mencari resep berdasarkan ID
+    const recipe = await Recipe.findByPk(id)
+
+    // Jika resep tidak ditemukan
     if (!recipe) {
-      return res.status(404).json({
-        error:
-          'Recipe not found or you are not authorized to delete this recipe',
-      })
+      return res.status(404).json({ error: 'Recipe not found' })
     }
 
-    // Menghapus Recipe
+    // Pastikan user_id ada
+    if (!userId) {
+      return res.status(400).json({ error: 'User ID is required' })
+    }
+
+    // Pastikan hanya pemilik yang dapat menghapus
+    if (String(recipe.user_id) !== String(userId)) {
+      return res
+        .status(403)
+        .json({ error: 'Not authorized to delete this recipe' })
+    }
+
+    // Menghapus resep
     await recipe.destroy()
 
     return res.status(200).json({ message: 'Recipe deleted successfully' })
   } catch (error) {
     console.error(error)
+
+    // Cek apakah error adalah kesalahan validasi
+    if (error.isJoi) {
+      return res.status(400).json({ error: error.message })
+    }
+
     return res.status(400).json({
       error: error.message || 'An error occurred while deleting the recipe',
     })

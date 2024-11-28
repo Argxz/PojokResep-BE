@@ -17,6 +17,7 @@ exports.create = Joi.object().keys({
 
 exports.update = Joi.object()
   .keys({
+    user_id: Joi.string().optional(),
     title: Joi.string().trim().min(3).max(255).optional(),
     description: Joi.string().trim().min(10).optional(),
     ingredients: Joi.string().trim().min(5).optional(),
@@ -32,5 +33,6 @@ exports.update = Joi.object()
   .min(1) // Pastikan setidaknya satu field diupdate
 
 exports.deleteSchema = Joi.object().keys({
-  id: Joi.number().integer().positive().required(),
+  id: Joi.number().integer().required(), // Validasi ID resep yang harus ada dan merupakan angka
+  user_id: Joi.string().required(), // Pastikan user_id juga ada dan merupakan string
 })
