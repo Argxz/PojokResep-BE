@@ -1,5 +1,7 @@
 'use strict'
 const { Model } = require('sequelize')
+const bcrypt = require('bcryptjs')
+
 module.exports = (sequelize, DataTypes) => {
   class User extends Model {
     /**
@@ -23,6 +25,7 @@ module.exports = (sequelize, DataTypes) => {
       })
     }
   }
+
   User.init(
     {
       username: {
@@ -31,6 +34,7 @@ module.exports = (sequelize, DataTypes) => {
       },
       email: {
         type: DataTypes.STRING,
+        unique: true, // Tambahkan validasi unique dari kode kedua
         allowNull: false,
       },
       password: {
@@ -50,7 +54,13 @@ module.exports = (sequelize, DataTypes) => {
       sequelize,
       modelName: 'User',
       tableName: 'Users',
+      hooks: {
+        beforeCreate: async (user) => {
+          user.password = await bcrypt.hash(user.password, 10) // Hash password otomatis di hook
+        },
+      },
     },
   )
+
   return User
 }
