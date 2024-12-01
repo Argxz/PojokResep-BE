@@ -4,6 +4,7 @@ const cors = require('cors')
 const app = express()
 const port = process.env.PORT || 3001
 const routes = require('./routes')
+const path = require('path')
 
 app.use(cors())
 app.use(morgan('combined'))
@@ -15,6 +16,8 @@ app.get('/', (req, res) => {
     status: 'Server ready 🚀',
   })
 })
+
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')))
 
 app.use('/api/v1', routes)
 
