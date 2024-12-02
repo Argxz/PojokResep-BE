@@ -11,6 +11,7 @@ const {
 // Rute publik (tidak memerlukan autentikasi)
 router.post('/register', userController.register)
 router.post('/login', userController.login)
+router.post('/refresh-token', userController.refreshToken)
 
 // Rute yang memerlukan autentikasi token
 router.get('/', authenticateToken, userController.getAllUsers)
@@ -20,6 +21,7 @@ router.post(
   authenticateToken,
   userController.handleProfilePictureUpload,
 )
+router.post('/logout', authenticateToken, userController.logout)
 
 // Rute verifikasi token
 router.get('/verify-token', authenticateToken, userController.verifyToken)

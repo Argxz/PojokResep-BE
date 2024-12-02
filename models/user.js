@@ -49,6 +49,10 @@ module.exports = (sequelize, DataTypes) => {
         type: DataTypes.STRING,
         defaultValue: 'user',
       },
+      refreshToken: {
+        type: DataTypes.TEXT,
+        allowNull: true,
+      },
     },
     {
       sequelize,
@@ -57,6 +61,9 @@ module.exports = (sequelize, DataTypes) => {
       hooks: {
         beforeCreate: async (user) => {
           user.password = await bcrypt.hash(user.password, 10) // Hash password otomatis di hook
+        },
+        beforeUpdate: (user, options) => {
+          console.log('Before Update Hook - Refresh Token:', user.refreshToken)
         },
       },
     },

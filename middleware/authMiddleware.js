@@ -13,36 +13,42 @@ exports.authenticateToken = async (req, res, next) => {
       })
     }
 
-    const decoded = jwt.verify(
-      token,
-      process.env.JWT_SECRET || 'your_secret_key',
-    )
+    try {
+      const decoded = jwt.verify(
+        token,
+        process.env.JWT_SECRET || 'your_secret_key',
+      )
 
-    const user = await User.findByPk(decoded.id, {
-      attributes: { exclude: ['password'] },
-    })
-
-    if (!user) {
-      return res.status(404).json({
-        valid: false,
-        message: 'User not found',
+      const user = await User.findByPk(decoded.id, {
+        attributes: { exclude: ['password'] },
       })
-    }
 
-    req.user = user.toJSON()
-    next()
+      if (!user) {
+        return res.status(404).json({
+          valid: false,
+          message: 'User not found',
+        })
+      }
+
+      req.user = user.toJSON()
+      next()
+    } catch (error) {
+      if (error.name === 'TokenExpiredError') {
+        // Token expired, client should use refresh token
+        return res.status(401).json({
+          valid: false,
+          message: 'Token expired',
+          needRefresh: true,
+        })
+      }
+
+      throw error
+    }
   } catch (error) {
     if (error.name === 'JsonWebTokenError') {
       return res.status(403).json({
         valid: false,
         message: 'Invalid token',
-      })
-    }
-
-    if (error.name === 'TokenExpiredError') {
-      return res.status(401).json({
-        valid: false,
-        message: 'Token expired',
       })
     }
 
