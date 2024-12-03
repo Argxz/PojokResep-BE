@@ -163,11 +163,11 @@ exports.register = async (req, res) => {
       password,
     })
 
-    const token = jwt.sign(
-      { id: newUser.id, email: newUser.email },
-      process.env.JWT_SECRET || 'your_secret_key',
-      { expiresIn: '1d' },
-    )
+    const accessToken = generateAccessToken(newUser)
+    const refreshToken = generateRefreshToken(newUser)
+
+    // Simpan refresh token di database
+    await newUser.update({ refreshToken })
 
     res.status(201).json({
       message: 'Registration successful',
@@ -175,7 +175,8 @@ exports.register = async (req, res) => {
         id: newUser.id,
         username: newUser.username,
         email: newUser.email,
-        token,
+        accessToken,
+        refreshToken, // Kirim refresh token juga
       },
     })
   } catch (error) {
@@ -250,72 +251,34 @@ exports.login = async (req, res) => {
 exports.refreshToken = async (req, res) => {
   try {
     const { refreshToken } = req.body
-    console.log('Received Refresh Token:', refreshToken) // Log token yang diterima
 
-    // Cari user dengan refresh token yang sesuai
-    const user = await User.findOne({
-      where: {
-        refreshToken: refreshToken,
-      },
-    })
-
-    console.log('User Found:', user)
-    console.log('User ID:', user?.id)
-
-    if (!user) {
-      // Coba verifikasi token terlebih dahulu
-      try {
-        const decoded = jwt.verify(
-          refreshToken,
-          process.env.REFRESH_TOKEN_SECRET,
-        )
-        console.log('Decoded Token:', decoded)
-
-        // Cari user berdasarkan ID dari token
-        const userByToken = await User.findByPk(decoded.id)
-
-        if (!userByToken) {
-          return res.status(403).json({
-            valid: false,
-            message: 'User not found',
-          })
-        }
-
-        // Generate new tokens
-        const newAccessToken = generateAccessToken(userByToken)
-        const newRefreshToken = generateRefreshToken(userByToken)
-
-        // Update refresh token
-        await userByToken.update({ refreshToken: newRefreshToken })
-
-        return res.json({
-          valid: true,
-          accessToken: newAccessToken,
-          refreshToken: newRefreshToken,
-          user: {
-            id: userByToken.id,
-            username: userByToken.username,
-            email: userByToken.email,
-          },
-        })
-      } catch (tokenError) {
-        console.error('Token Verification Error:', tokenError)
-        return res.status(403).json({
-          valid: false,
-          message: 'Invalid or expired refresh token',
-          error: tokenError.message,
-        })
-      }
+    // Check if refreshToken is provided
+    if (!refreshToken) {
+      return res.status(400).json({ message: 'No refresh token provided' })
     }
 
-    // Generate token baru
+    // Verify refresh token
+    const decoded = jwt.verify(
+      refreshToken,
+      process.env.REFRESH_TOKEN_SECRET || 'your-secret-key',
+    )
+    console.log('Decoded Token:', decoded)
+
+    // Find the user by ID from the decoded token
+    const user = await User.findByPk(decoded.id)
+
+    if (!user) {
+      return res.status(403).json({ message: 'User not found' })
+    }
+
+    // Generate new tokens
     const newAccessToken = generateAccessToken(user)
     const newRefreshToken = generateRefreshToken(user)
 
-    // Update refresh token di database
+    // Update refresh token in the database
     await user.update({ refreshToken: newRefreshToken })
 
-    res.json({
+    return res.json({
       valid: true,
       accessToken: newAccessToken,
       refreshToken: newRefreshToken,
@@ -327,7 +290,7 @@ exports.refreshToken = async (req, res) => {
     })
   } catch (error) {
     console.error('Refresh token error:', error)
-    res.status(500).json({
+    return res.status(500).json({
       valid: false,
       message: 'Server error during token refresh',
       error: error.message,

@@ -53,17 +53,41 @@ exports.getRecipeById = async (req, res) => {
 }
 
 exports.createRecipe = async (req, res) => {
-  // Validasi payload sebelum proses lebih lanjut
-  recipeValidation.validateCreatePayload(req.body)
-
   try {
-    const recipes = await Recipe.create(req.body)
+    // Konversi tipe data sebelum validasi
+    const recipeData = {
+      ...req.body,
+      user_id: req.user.id,
+      cooking_time: parseInt(req.body.cooking_time),
+      serving_size: parseInt(req.body.serving_size),
+    }
+
+    console.log('Received Recipe Data:', recipeData)
+    // Validasi payload sebelum proses lebih lanjut
+    await recipeValidation.validateCreatePayload(recipeData)
+
+    const recipe = await Recipe.create(recipeData)
     res.status(201).json({
       message: 'Recipe created successfully',
-      data: recipes,
+      data: recipe,
     })
   } catch (error) {
-    res.status(500).json({ error: error.message })
+    console.error('Create Recipe Error:', error)
+
+    // Tambahkan penanganan error yang lebih spesifik
+    if (error.isJoi) {
+      // Error validasi Joi
+      return res.status(400).json({
+        message: 'Validation Error',
+        errors: error.details.map((detail) => detail.message),
+      })
+    }
+
+    // Error umum
+    res.status(500).json({
+      message: 'Internal Server Error',
+      error: error.message,
+    })
   }
 }
 

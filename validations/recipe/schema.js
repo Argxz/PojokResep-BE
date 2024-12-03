@@ -2,17 +2,17 @@ const Joi = require('joi')
 
 exports.create = Joi.object().keys({
   user_id: Joi.number().integer().required(),
-  title: Joi.string().trim().required(),
-  description: Joi.string().trim().required(),
-  ingredients: Joi.string().trim().required(),
-  instructions: Joi.string().trim().required(),
-  cooking_time: Joi.string().trim().required(),
-  serving_size: Joi.string().trim().required(),
+  title: Joi.string().trim().min(3).max(100).required(), // Tambahkan batasan panjang
+  description: Joi.string().trim().min(10).max(500).required(), // Tambahkan batasan panjang
+  ingredients: Joi.string().trim().min(10).required(), // Minimal panjang ingredients
+  instructions: Joi.string().trim().min(10).required(), // Minimal panjang instructions
+  cooking_time: Joi.number().integer().min(1).required(), // Ubah ke number
+  serving_size: Joi.number().integer().min(1).required(), // Ubah ke number
   difficulty_level: Joi.string()
-    .valid('mudah', 'menengah', 'sulit', 'ahli')
-    .required(), // Misalnya, jika ada level kesulitan tertentu
+    .valid('Easy', 'Medium', 'Hard') // Sesuaikan dengan opsi di frontend
+    .required(),
   category_id: Joi.number().integer().required(),
-  image_url: Joi.string().uri().allow(null), // Mengizinkan null jika tidak ada URL gambar
+  image_url: Joi.string().uri().allow(null), // Opsional
 })
 
 exports.update = Joi.object()
