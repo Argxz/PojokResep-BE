@@ -12,7 +12,7 @@ exports.create = Joi.object().keys({
     .valid('Easy', 'Medium', 'Hard') // Sesuaikan dengan opsi di frontend
     .required(),
   category_id: Joi.number().integer().required(),
-  image_url: Joi.string().uri().allow(null), // Opsional
+  image_url: Joi.string().allow(null), // Opsional
 })
 
 exports.update = Joi.object()
@@ -28,7 +28,7 @@ exports.update = Joi.object()
       .valid('mudah', 'menengah', 'sulit', 'ahli')
       .optional(),
     category_id: Joi.number().integer().positive().optional(),
-    image_url: Joi.string().uri().allow(null).optional(),
+    image_url: Joi.string().allow(null).optional(),
   })
   .min(1) // Pastikan setidaknya satu field diupdate
 

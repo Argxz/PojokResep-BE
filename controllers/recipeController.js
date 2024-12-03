@@ -1,5 +1,6 @@
 const { Recipe, User, Categories } = require('../models')
 const recipeValidation = require('../validations/recipe')
+const fsPromises = require('fs').promises
 
 exports.getAllRecipes = async (req, res) => {
   try {
@@ -62,6 +63,12 @@ exports.createRecipe = async (req, res) => {
       serving_size: parseInt(req.body.serving_size),
     }
 
+    // Tambahkan logika untuk image upload
+    if (req.file) {
+      // Konstruksi path relatif untuk disimpan di database
+      recipeData.image_url = `../uploads/recipes/${req.file.filename}`
+    }
+
     console.log('Received Recipe Data:', recipeData)
     // Validasi payload sebelum proses lebih lanjut
     await recipeValidation.validateCreatePayload(recipeData)
@@ -72,18 +79,20 @@ exports.createRecipe = async (req, res) => {
       data: recipe,
     })
   } catch (error) {
+    // Hapus file yang sudah terupload jika terjadi error
+    if (req.file) {
+      await fsPromises.unlink(req.file.path)
+    }
+
     console.error('Create Recipe Error:', error)
 
-    // Tambahkan penanganan error yang lebih spesifik
     if (error.isJoi) {
-      // Error validasi Joi
       return res.status(400).json({
         message: 'Validation Error',
         errors: error.details.map((detail) => detail.message),
       })
     }
 
-    // Error umum
     res.status(500).json({
       message: 'Internal Server Error',
       error: error.message,

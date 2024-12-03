@@ -5,10 +5,16 @@ const {
   authenticateToken,
   authorizeRole,
 } = require('../middleware/authMiddleware')
+const upload = require('../middleware/recipeMiddleware')
 
 router.get('/', authenticateToken, recipeController.getAllRecipes)
 router.get('/:id', authenticateToken, recipeController.getRecipeById)
-router.post('/', authenticateToken, recipeController.createRecipe)
+router.post(
+  '/',
+  authenticateToken,
+  upload.single('image'),
+  recipeController.createRecipe,
+)
 router.put('/:id', authenticateToken, recipeController.updateRecipe)
 
 router.delete(
