@@ -11,6 +11,11 @@ const recipeValidation = {
   },
   validateUpdatePayload: async (payload) => {
     try {
+      // Cek apakah payload kosong atau tidak memiliki key
+      if (!payload || Object.keys(payload).length === 0) {
+        throw new Error('Payload update tidak boleh kosong')
+      }
+
       // Jika ada category_id, validasi terlebih dahulu
       if (payload.category_id) {
         const category = await Categories.findByPk(payload.category_id)
@@ -26,6 +31,8 @@ const recipeValidation = {
       if (validationResult.error) {
         throw new Error(validationResult.error.details[0].message)
       }
+
+      return payload
     } catch (error) {
       throw error
     }

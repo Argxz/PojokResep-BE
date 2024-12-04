@@ -15,7 +15,12 @@ router.post(
   upload.single('image'),
   recipeController.createRecipe,
 )
-router.put('/:id', authenticateToken, recipeController.updateRecipe)
+router.put(
+  '/:id',
+  authenticateToken,
+  upload.single('image'),
+  recipeController.updateRecipe,
+)
 
 router.delete('/:id', authenticateToken, recipeController.deleteRecipe)
 

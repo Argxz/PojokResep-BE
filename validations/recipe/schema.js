@@ -18,19 +18,21 @@ exports.create = Joi.object().keys({
 exports.update = Joi.object()
   .keys({
     user_id: Joi.string().optional(),
-    title: Joi.string().trim().min(3).max(255).optional(),
-    description: Joi.string().trim().min(10).optional(),
-    ingredients: Joi.string().trim().min(5).optional(),
-    instructions: Joi.string().trim().min(10).optional(),
-    cooking_time: Joi.string().trim().optional(),
-    serving_size: Joi.string().trim().optional(),
+    title: Joi.string().trim().min(3).max(255).optional().allow(''),
+    description: Joi.string().trim().min(10).optional().allow(''),
+    ingredients: Joi.string().trim().min(5).optional().allow(''),
+    instructions: Joi.string().trim().min(10).optional().allow(''),
+    cooking_time: Joi.string().trim().optional().allow(''),
+    serving_size: Joi.string().trim().optional().allow(''),
     difficulty_level: Joi.string()
-      .valid('mudah', 'menengah', 'sulit', 'ahli')
-      .optional(),
-    category_id: Joi.number().integer().positive().optional(),
-    image_url: Joi.string().allow(null).optional(),
+      .valid('Easy', 'Medium', 'Hard')
+      .optional()
+      .allow(''),
+    category_id: Joi.number().integer().optional().allow(null),
+    image_url: Joi.string().allow(null, '').optional(),
   })
   .min(1) // Pastikan setidaknya satu field diupdate
+  .required() // Pastikan object tidak kosong
 
 exports.deleteSchema = Joi.object().keys({
   id: Joi.number().integer().required(), // Validasi ID resep yang harus ada dan merupakan angka

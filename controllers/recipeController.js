@@ -17,6 +17,7 @@ exports.getAllRecipes = async (req, res) => {
           attributes: ['name'],
         },
       ],
+      order: [['createdAt', 'DESC']], // Urutkan dari yang terbaru
     })
     res.json({ status: 'OK', data: recipes })
   } catch (error) {
@@ -53,6 +54,40 @@ exports.getRecipeById = async (req, res) => {
   }
 }
 
+exports.getRecipesByUserId = async (req, res) => {
+  const { userId } = req.params
+  try {
+    const recipes = await Recipe.findAll({
+      where: { user_id: userId }, // Menentukan resep milik user tertentu
+      include: [
+        {
+          model: User,
+          as: 'user',
+          attributes: ['username', 'profile_picture'], // Mengambil hanya atribut username
+        },
+        {
+          model: Categories,
+          as: 'category',
+          attributes: ['name'], // Mengambil hanya atribut name
+        },
+      ],
+      order: [['createdAt', 'DESC']], // Urutkan dari yang terbaru
+    })
+
+    if (!recipes || recipes.length === 0) {
+      return res.status(404).json({ error: 'No recipes found for this user' })
+    }
+
+    return res.status(200).json(recipes)
+  } catch (error) {
+    console.error('Error retrieving user recipes:', error)
+    return res.status(500).json({
+      error: 'An error occurred while retrieving user recipes',
+      details: error.message,
+    })
+  }
+}
+
 exports.createRecipe = async (req, res) => {
   try {
     // Konversi tipe data sebelum validasi
@@ -66,7 +101,7 @@ exports.createRecipe = async (req, res) => {
     // Tambahkan logika untuk image upload
     if (req.file) {
       // Konstruksi path relatif untuk disimpan di database
-      recipeData.image_url = `../uploads/recipes/${req.file.filename}`
+      recipeData.image_url = `/uploads/recipes/${req.file.filename}`
     }
 
     console.log('Received Recipe Data:', recipeData)
@@ -102,11 +137,40 @@ exports.createRecipe = async (req, res) => {
 
 exports.updateRecipe = async (req, res) => {
   const { id } = req.params
-  const updateData = req.body
+
+  console.log('Incoming Update Request:')
+  console.log('Body:', req.body)
+  console.log('File:', req.file)
+
+  // Konversi tipe data
+  const updateData = {
+    ...req.body,
+    ...(req.file
+      ? {
+          image_url: `/uploads/recipes/${req.file.filename}`,
+        }
+      : {}),
+  }
+
+  // Filter out empty or undefined values
+  const filteredUpdateData = Object.fromEntries(
+    Object.entries(updateData).filter(
+      ([_, v]) => v !== undefined && v !== null && v !== '',
+    ),
+  )
+
+  console.log('Filtered Update Data:', filteredUpdateData)
 
   try {
-    // Validasi payload update (tambahkan await)
-    await recipeValidation.validateUpdatePayload(updateData)
+    // Validasi payload update
+    await recipeValidation.validateUpdatePayload(filteredUpdateData)
+
+    // Cek apakah ada data yang akan diupdate
+    if (Object.keys(filteredUpdateData).length === 0) {
+      return res.status(400).json({
+        error: 'No update data provided',
+      })
+    }
 
     // Mencari Recipe berdasarkan ID
     const recipe = await Recipe.findByPk(id)
@@ -115,27 +179,21 @@ exports.updateRecipe = async (req, res) => {
       return res.status(404).json({ error: 'Recipe not found' })
     }
 
-    // Jika req.user ada (autentikasi aktif), gunakan id dari sana
-    const userId = req.user ? req.user.id : updateData.user_id
-
-    // Pastikan hanya pemilik yang bisa update
-    if (String(recipe.user_id) !== String(userId)) {
-      return res
-        .status(403)
-        .json({ error: 'Not authorized to update this recipe' })
-    }
-
     // Update Recipe
-    await recipe.update(updateData)
+    await recipe.update(filteredUpdateData)
 
     return res.status(200).json({
       message: 'Recipe updated successfully',
-      recipe,
+      data: {
+        ...recipe.toJSON(),
+        image_url: filteredUpdateData.image_url || recipe.image_url,
+      },
     })
   } catch (error) {
-    console.error(error)
+    console.error('Full Update Error:', error)
     return res.status(400).json({
       error: error.message || 'An error occurred while updating the recipe',
+      fullError: process.env.NODE_ENV === 'development' ? error : undefined,
     })
   }
 }
