@@ -36,5 +36,4 @@ exports.update = Joi.object()
 
 exports.deleteSchema = Joi.object().keys({
   id: Joi.number().integer().required(), // Validasi ID resep yang harus ada dan merupakan angka
-  user_id: Joi.string().required(), // Pastikan user_id juga ada dan merupakan string
 })

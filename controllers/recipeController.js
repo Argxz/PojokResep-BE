@@ -200,15 +200,9 @@ exports.updateRecipe = async (req, res) => {
 
 exports.deleteRecipe = async (req, res) => {
   const { id } = req.params
-  const userId = req.body.user_id // Ambil user_id dari body permintaan
+  const userId = req.user.id // Ambil user_id dari token/autentikasi
 
   try {
-    // Validasi ID dan user_id
-    await recipeValidation.validateDeletePayload({
-      id: Number(id),
-      user_id: userId,
-    })
-
     // Mencari resep berdasarkan ID
     const recipe = await Recipe.findByPk(id)
 
@@ -217,13 +211,8 @@ exports.deleteRecipe = async (req, res) => {
       return res.status(404).json({ error: 'Recipe not found' })
     }
 
-    // Pastikan user_id ada
-    if (!userId) {
-      return res.status(400).json({ error: 'User ID is required' })
-    }
-
     // Pastikan hanya pemilik yang dapat menghapus
-    if (String(recipe.user_id) !== String(userId)) {
+    if (recipe.user_id !== userId) {
       return res
         .status(403)
         .json({ error: 'Not authorized to delete this recipe' })
@@ -235,13 +224,7 @@ exports.deleteRecipe = async (req, res) => {
     return res.status(200).json({ message: 'Recipe deleted successfully' })
   } catch (error) {
     console.error(error)
-
-    // Cek apakah error adalah kesalahan validasi
-    if (error.isJoi) {
-      return res.status(400).json({ error: error.message })
-    }
-
-    return res.status(400).json({
+    return res.status(500).json({
       error: error.message || 'An error occurred while deleting the recipe',
     })
   }
