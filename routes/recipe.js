@@ -17,11 +17,6 @@ router.post(
 )
 router.put('/:id', authenticateToken, recipeController.updateRecipe)
 
-router.delete(
-  '/:id',
-  authenticateToken,
-  authorizeRole(['admin']),
-  recipeController.deleteRecipe,
-)
+router.delete('/:id', authenticateToken, recipeController.deleteRecipe)
 
 module.exports = router

@@ -9,7 +9,7 @@ exports.getAllRecipes = async (req, res) => {
         {
           model: User,
           as: 'user',
-          attributes: ['username'],
+          attributes: ['username', 'profile_picture'],
         },
         {
           model: Categories,
@@ -33,7 +33,7 @@ exports.getRecipeById = async (req, res) => {
         {
           model: User,
           as: 'user',
-          attributes: ['username'], // Mengambil hanya atribut username
+          attributes: ['username', 'profile_picture'], // Mengambil hanya atribut username
         },
         {
           model: Categories,
