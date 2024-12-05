@@ -151,12 +151,19 @@ exports.register = async (req, res) => {
   }
 
   try {
-    const existingUser = await User.findOne({ where: { email } })
-
-    if (existingUser) {
-      return res.status(409).json({ error: 'Email already in use' })
+    // Cek email
+    const existingEmail = await User.findOne({ where: { email } })
+    if (existingEmail) {
+      return res.status(409).json({ error: 'Email sudah terdaftar' })
     }
 
+    // Cek username (opsional)
+    const existingUsername = await User.findOne({ where: { username } })
+    if (existingUsername) {
+      return res.status(409).json({ error: 'Username sudah digunakan' })
+    }
+
+    // Proses registrasi normal
     const newUser = await User.create({
       username,
       email,
@@ -176,7 +183,7 @@ exports.register = async (req, res) => {
         username: newUser.username,
         email: newUser.email,
         accessToken,
-        refreshToken, // Kirim refresh token juga
+        refreshToken,
       },
     })
   } catch (error) {

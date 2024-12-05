@@ -2,7 +2,7 @@ const Joi = require('joi')
 
 exports.create = Joi.object().keys({
   user_id: Joi.number().integer().required(),
-  title: Joi.string().trim().min(3).max(100).required(), // Tambahkan batasan panjang
+  title: Joi.string().trim().min(3).max(255).required(), // Tambahkan batasan panjang
   description: Joi.string().trim().min(10).max(500).required(), // Tambahkan batasan panjang
   ingredients: Joi.string().trim().min(10).required(), // Minimal panjang ingredients
   instructions: Joi.string().trim().min(10).required(), // Minimal panjang instructions
@@ -19,7 +19,7 @@ exports.update = Joi.object()
   .keys({
     user_id: Joi.string().optional(),
     title: Joi.string().trim().min(3).max(255).optional().allow(''),
-    description: Joi.string().trim().min(10).optional().allow(''),
+    description: Joi.string().trim().min(10).max(500).optional().allow(''),
     ingredients: Joi.string().trim().min(5).optional().allow(''),
     instructions: Joi.string().trim().min(10).optional().allow(''),
     cooking_time: Joi.string().trim().optional().allow(''),

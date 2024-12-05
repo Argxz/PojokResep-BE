@@ -25,20 +25,33 @@ exports.getAllComments = async (req, res) => {
 }
 
 exports.createComment = async (req, res) => {
-  const createData = req.body
+  const { recipe_id, content } = req.body
+  const user_id = req.user.id
 
   try {
-    // Validasi payload menggunakan Joi
-    await commentValidation.validateCreatePayload(createData)
+    const newComment = await Comment.create({
+      recipe_id,
+      user_id,
+      content,
+    })
 
-    const comment = await Comment.create(createData)
+    const commentWithUser = await Comment.findByPk(newComment.id, {
+      include: [
+        {
+          model: User,
+          as: 'user',
+          attributes: ['id', 'username', 'profile_picture'],
+        },
+      ],
+    })
+
     res.status(201).json({
-      message: 'Comment created successfully',
-      data: comment,
+      status: 'OK',
+      data: commentWithUser,
     })
   } catch (error) {
     console.error(error)
-    res.status(400).json({ error: error.message || 'Failed to create comment' })
+    res.status(500).json({ error: 'Gagal membuat komentar' })
   }
 }
 
@@ -46,35 +59,26 @@ exports.getCommentsByRecipeId = async (req, res) => {
   const { recipe_id } = req.params
 
   try {
-    // Validasi input
-    if (!recipe_id) {
-      return res.status(400).json({ error: 'recipe_id is required' })
-    }
-
-    // Cari komentar berdasarkan recipe_id
     const comments = await Comment.findAll({
       where: { recipe_id },
       include: [
         {
           model: User,
           as: 'user',
-          attributes: ['username'],
+          attributes: ['id', 'username', 'profile_picture'],
         },
       ],
+      order: [['createdAt', 'DESC']],
     })
 
-    // Jika tidak ada komentar
-    if (comments.length === 0) {
-      return res
-        .status(404)
-        .json({ message: 'No comments found for this recipe' })
-    }
-
-    // Kembalikan data komentar
-    res.status(200).json({ status: 'OK', data: comments })
+    res.status(200).json({
+      status: 'OK',
+      data: comments,
+      message: comments.length === 0 ? 'Belum ada komentar' : null,
+    })
   } catch (error) {
     console.error(error)
-    res.status(500).json({ error: 'An error occurred while fetching comments' })
+    res.status(500).json({ error: 'Gagal mengambil komentar' })
   }
 }
 

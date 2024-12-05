@@ -1,11 +1,19 @@
 const express = require('express')
 const router = express.Router()
 const commentController = require('../controllers/commentController')
+const {
+  authenticateToken,
+  authorizeRole,
+} = require('../middleware/authMiddleware')
 
-router.get('/', commentController.getAllComments)
-router.get('/recipe_id/:recipe_id', commentController.getCommentsByRecipeId)
-router.post('/', commentController.createComment)
-router.put('/:id', commentController.updateCommentContent)
-router.delete('/:id', commentController.deleteComment)
+router.get('/', authenticateToken, commentController.getAllComments)
+router.get(
+  '/recipes/:recipe_id',
+  authenticateToken,
+  commentController.getCommentsByRecipeId,
+)
+router.post('/', authenticateToken, commentController.createComment)
+router.put('/:id', authenticateToken, commentController.updateCommentContent)
+router.delete('/:id', authenticateToken, commentController.deleteComment)
 
 module.exports = router
