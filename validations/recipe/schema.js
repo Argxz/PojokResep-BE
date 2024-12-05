@@ -9,7 +9,7 @@ exports.create = Joi.object().keys({
   cooking_time: Joi.number().integer().min(1).required(), // Ubah ke number
   serving_size: Joi.number().integer().min(1).required(), // Ubah ke number
   difficulty_level: Joi.string()
-    .valid('Easy', 'Medium', 'Hard') // Sesuaikan dengan opsi di frontend
+    .valid('Mudah', 'Menengah', 'Sulit') // Sesuaikan dengan opsi di frontend
     .required(),
   category_id: Joi.number().integer().required(),
   image_url: Joi.string().allow(null), // Opsional
@@ -25,7 +25,7 @@ exports.update = Joi.object()
     cooking_time: Joi.string().trim().optional().allow(''),
     serving_size: Joi.string().trim().optional().allow(''),
     difficulty_level: Joi.string()
-      .valid('Easy', 'Medium', 'Hard')
+      .valid('Mudah', 'Menengah', 'Sulit')
       .optional()
       .allow(''),
     category_id: Joi.number().integer().optional().allow(null),
