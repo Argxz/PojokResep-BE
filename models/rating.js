@@ -34,9 +34,9 @@ module.exports = (sequelize, DataTypes) => {
         type: DataTypes.INTEGER,
         allowNull: false,
         validate: {
-          min: 1, // Nilai minimum
-          max: 5, // Nilai maksimum
-          isInt: true, // Harus berupa angka bulat
+          min: 1,
+          max: 5,
+          isInt: true,
         },
       },
     },

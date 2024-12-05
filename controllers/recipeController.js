@@ -1,4 +1,4 @@
-const { Recipe, User, Categories, Comment } = require('../models')
+const { Recipe, User, Categories, Comment, Rating } = require('../models')
 const { sequelize } = require('../models')
 const recipeValidation = require('../validations/recipe')
 const fsPromises = require('fs').promises
@@ -224,6 +224,10 @@ exports.deleteRecipe = async (req, res) => {
 
     // Hapus terlebih dahulu komentar terkait
     await Comment.destroy({
+      where: { recipe_id: id },
+      transaction,
+    })
+    await Rating.destroy({
       where: { recipe_id: id },
       transaction,
     })

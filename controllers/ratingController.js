@@ -54,6 +54,15 @@ exports.getRatingByRecipeId = async (req, res) => {
         .status(404)
         .json({ message: 'No ratings found for this recipe' })
     }
+    console.log(
+      'Ratings Data:',
+      ratings.map((rating) => ({
+        id: rating.id,
+        value: rating.value,
+        recipe_id: rating.recipe_id,
+        user_id: rating.user_id,
+      })),
+    )
 
     // Kembalikan data komentar
     res.status(200).json(ratings)
@@ -64,32 +73,81 @@ exports.getRatingByRecipeId = async (req, res) => {
 }
 
 exports.createRating = async (req, res) => {
-  const { recipe_id, user_id, value } = req.body
-
-  // Validasi input
-  if (!recipe_id || !user_id || value === undefined) {
-    return res
-      .status(400)
-      .json({ error: 'All required fields must be provided' })
-  }
-
-  if (value < 1 || value > 5) {
-    return res
-      .status(400)
-      .json({ error: 'Rating value must be between 1 and 5' })
-  }
+  const { recipe_id, value } = req.body
+  const user_id = req.user.id // Ambil dari token
 
   try {
-    const ratings = await Rating.create({ recipe_id, user_id, value })
+    // Cek apakah user adalah pemilik resep
+    const recipe = await Recipe.findByPk(recipe_id)
+    if (recipe.user_id === user_id) {
+      return res.status(403).json({
+        error: 'Anda tidak dapat memberi rating pada resep sendiri',
+      })
+    }
+
+    // Cari rating yang sudah ada
+    const existingRating = await Rating.findOne({
+      where: { recipe_id, user_id },
+    })
+
+    if (existingRating) {
+      // Update rating yang sudah ada
+      existingRating.value = value
+      await existingRating.save()
+
+      return res.status(200).json({
+        message: 'Rating updated successfully',
+        data: existingRating,
+      })
+    }
+
+    // Buat rating baru
+    const newRating = await Rating.create({
+      recipe_id,
+      user_id,
+      value,
+    })
+
     res.status(201).json({
       message: 'Rating created successfully',
-      data: ratings,
+      data: newRating,
     })
   } catch (error) {
-    res.status(500).json({ error: error.message })
+    console.error(error)
+    res.status(500).json({ error: 'An error occurred while creating rating' })
   }
 }
+exports.getUserRatingForRecipe = async (req, res) => {
+  try {
+    const { recipe_id } = req.params
+    const user_id = req.user.id
 
+    // Cari rating spesifik user untuk recipe ini
+    const userRating = await Rating.findOne({
+      where: {
+        recipe_id,
+        user_id,
+      },
+      attributes: ['value'],
+    })
+
+    if (userRating) {
+      return res.status(200).json({
+        userRating: userRating.value,
+      })
+    }
+
+    // Jika belum pernah rating
+    return res.status(404).json({
+      message: 'No rating found',
+    })
+  } catch (error) {
+    console.error(error)
+    res.status(500).json({
+      error: 'An error occurred while fetching user rating',
+    })
+  }
+}
 exports.updateRatingByUser = async (req, res) => {
   try {
     const { recipe_id } = req.params // Mendapatkan recipe_id dari parameter
