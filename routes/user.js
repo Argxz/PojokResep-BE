@@ -37,6 +37,6 @@ router.get(
 router.get('/profile', authenticateToken, userController.getUserProfile)
 
 // Rute update profil
-router.put('/profile', authenticateToken, userController.updateUserProfile)
+router.put('/profile', authenticateToken, userController.updateUsernameEmail)
 
 module.exports = router

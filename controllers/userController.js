@@ -5,6 +5,7 @@ const multer = require('multer')
 const path = require('path')
 const fs = require('fs')
 const fsPromises = require('fs').promises
+const userValidation = require('../validations/user')
 
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
@@ -151,6 +152,7 @@ exports.register = async (req, res) => {
   }
 
   try {
+    userValidation.validateCreatePayload(req.body)
     // Cek email
     const existingEmail = await User.findOne({ where: { email } })
     if (existingEmail) {
@@ -356,37 +358,63 @@ exports.getUserProfile = async (req, res) => {
 }
 
 // Update profil user
-exports.updateUserProfile = async (req, res) => {
+exports.updateUsernameEmail = async (req, res) => {
   try {
-    const { username, profile_picture } = req.body
+    // Validasi payload update
+    await userValidation.validateUpdatePayload(req.body)
 
-    const user = await User.findByPk(req.user.id)
+    const { username, email } = req.body
+    const userId = req.user.id // Dari middleware authentication
 
+    // Cari user
+    const user = await User.findByPk(userId)
     if (!user) {
-      return res.status(404).json({
-        message: 'User tidak ditemukan',
-      })
+      return res.status(404).json({ error: 'User tidak ditemukan' })
     }
 
-    // Update field yang diizinkan
-    user.username = username || user.username
-    user.profile_picture = profile_picture || user.profile_picture
+    // Cek jika email sudah digunakan (jika diupdate)
+    if (email && email !== user.email) {
+      const existingEmail = await User.findOne({ where: { email } })
+      if (existingEmail) {
+        return res.status(409).json({ error: 'Email sudah terdaftar' })
+      }
+    }
 
-    await user.save()
+    // Cek jika username sudah digunakan (jika diupdate)
+    if (username && username !== user.username) {
+      const existingUsername = await User.findOne({ where: { username } })
+      if (existingUsername) {
+        return res.status(409).json({ error: 'Username sudah digunakan' })
+      }
+    }
+
+    // Update profil
+    await user.update({
+      ...(username && { username }),
+      ...(email && { email }),
+    })
 
     res.status(200).json({
       message: 'Profil berhasil diupdate',
       data: {
-        id: user.id,
         username: user.username,
         email: user.email,
-        profile_picture: user.profile_picture,
       },
     })
   } catch (error) {
+    console.error('Update Profile Error:', error)
+
+    // Cek apakah error dari validasi
+    if (error.message.includes('Validation')) {
+      return res.status(400).json({
+        error: 'Validation Error',
+        details: error.message,
+      })
+    }
+
     res.status(500).json({
-      message: 'Gagal update profil',
-      error: error.message,
+      error: 'Gagal update profil',
+      details: error.message,
     })
   }
 }

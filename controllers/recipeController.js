@@ -56,10 +56,20 @@ exports.getRecipeById = async (req, res) => {
 }
 
 exports.getRecipesByUserId = async (req, res) => {
-  const { userId } = req.params
   try {
+    const userId = req.user.id // Pastikan ini benar
+    console.log('Received User ID:', userId) // Log user ID
+
+    if (!userId) {
+      return res.status(400).json({
+        message: 'User ID is required',
+      })
+    }
+
     const recipes = await Recipe.findAll({
-      where: { user_id: userId }, // Menentukan resep milik user tertentu
+      where: {
+        user_id: userId,
+      }, // Menentukan resep milik user tertentu
       include: [
         {
           model: User,
