@@ -1,4 +1,5 @@
-const { Recipe, User, Categories } = require('../models')
+const { Recipe, User, Categories, Comment } = require('../models')
+const { sequelize } = require('../models')
 const recipeValidation = require('../validations/recipe')
 const fsPromises = require('fs').promises
 
@@ -200,7 +201,10 @@ exports.updateRecipe = async (req, res) => {
 
 exports.deleteRecipe = async (req, res) => {
   const { id } = req.params
-  const userId = req.user.id // Ambil user_id dari token/autentikasi
+  const userId = req.user.id
+
+  // Gunakan transaction dari sequelize
+  const transaction = await sequelize.transaction()
 
   try {
     // Mencari resep berdasarkan ID
@@ -218,11 +222,22 @@ exports.deleteRecipe = async (req, res) => {
         .json({ error: 'Not authorized to delete this recipe' })
     }
 
-    // Menghapus resep
-    await recipe.destroy()
+    // Hapus terlebih dahulu komentar terkait
+    await Comment.destroy({
+      where: { recipe_id: id },
+      transaction,
+    })
+
+    // Kemudian hapus resep
+    await recipe.destroy({ transaction })
+
+    // Commit transaksi
+    await transaction.commit()
 
     return res.status(200).json({ message: 'Recipe deleted successfully' })
   } catch (error) {
+    // Rollback transaksi jika terjadi kesalahan
+    await transaction.rollback()
     console.error(error)
     return res.status(500).json({
       error: error.message || 'An error occurred while deleting the recipe',

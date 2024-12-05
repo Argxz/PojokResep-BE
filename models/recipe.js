@@ -21,6 +21,7 @@ module.exports = (sequelize, DataTypes) => {
       Recipe.hasMany(models.Comment, {
         foreignKey: 'recipe_id',
         as: 'comment',
+        onDelete: 'CASCADE',
       })
       Recipe.hasMany(models.Rating, {
         foreignKey: 'recipe_id',
