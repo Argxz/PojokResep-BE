@@ -1,3 +1,4 @@
+require('dotenv').config()
 const { User } = require('../models')
 const jwt = require('jsonwebtoken')
 const bcrypt = require('bcryptjs')
@@ -267,10 +268,7 @@ exports.refreshToken = async (req, res) => {
     }
 
     // Verify refresh token
-    const decoded = jwt.verify(
-      refreshToken,
-      process.env.REFRESH_TOKEN_SECRET || 'your-secret-key',
-    )
+    const decoded = jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET)
     console.log('Decoded Token:', decoded)
 
     // Find the user by ID from the decoded token
@@ -462,11 +460,9 @@ exports.verifyToken = async (req, res) => {
 }
 
 const generateAccessToken = (user) => {
-  return jwt.sign(
-    { id: user.id, email: user.email },
-    process.env.JWT_SECRET || 'your_secret_key',
-    { expiresIn: '1h' },
-  )
+  return jwt.sign({ id: user.id, email: user.email }, process.env.JWT_SECRET, {
+    expiresIn: '1h',
+  })
 }
 
 const generateRefreshToken = (user) => {
@@ -475,7 +471,7 @@ const generateRefreshToken = (user) => {
       id: user.id,
       email: user.email,
     },
-    process.env.REFRESH_TOKEN_SECRET || 'your_secret_key',
+    process.env.REFRESH_TOKEN_SECRET,
     {
       expiresIn: '7d',
     },

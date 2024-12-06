@@ -1,8 +1,9 @@
+require('dotenv').config()
 const express = require('express')
 const morgan = require('morgan')
 const cors = require('cors')
 const app = express()
-const port = process.env.PORT || 3001
+const port = process.env.PORT
 const routes = require('./routes')
 const path = require('path')
 
@@ -13,7 +14,7 @@ app.use(express.json())
 app.get('/', (req, res) => {
   res.send({
     message: 'Hallo 👋',
-    status: 'Server ready 🚀',
+    status: 'API ready to use 🚀',
   })
 })
 
