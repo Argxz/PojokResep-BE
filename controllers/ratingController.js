@@ -48,21 +48,14 @@ exports.getRatingByRecipeId = async (req, res) => {
       ], // Sequelize akan otomatis memetakan
     })
 
-    // Jika tidak ada komentar
+    // Jika tidak ada ratings, kembalikan status 200 dengan data kosong
     if (ratings.length === 0) {
-      return res
-        .status(404)
-        .json({ message: 'No ratings found for this recipe' })
+      return res.status(200).json({
+        data: [],
+        message: 'No ratings found for this recipe',
+        averageRating: 0,
+      })
     }
-    console.log(
-      'Ratings Data:',
-      ratings.map((rating) => ({
-        id: rating.id,
-        value: rating.value,
-        recipe_id: rating.recipe_id,
-        user_id: rating.user_id,
-      })),
-    )
 
     // Kembalikan data komentar
     res.status(200).json(ratings)

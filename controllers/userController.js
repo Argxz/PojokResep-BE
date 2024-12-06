@@ -197,15 +197,32 @@ exports.register = async (req, res) => {
 exports.login = async (req, res) => {
   const { email, password } = req.body
 
-  if (!email || !password) {
-    return res.status(400).json({ error: 'Email and password are required' })
+  console.log('Login Request:', { email, password }) // Logging input
+
+  // Validasi email menggunakan regex
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+  if (!email) {
+    return res.status(400).json({ error: 'Email wajib diisi' })
+  }
+
+  if (!emailRegex.test(email)) {
+    return res.status(400).json({ error: 'Format email tidak valid' })
+  }
+
+  if (!password) {
+    return res.status(400).json({ error: 'Password wajib diisi' })
   }
 
   try {
     // Cek apakah user dengan email tersebut ada
-    const user = await User.findOne({ where: { email } })
+    const user = await User.findOne({
+      where: { email },
+      // Tambahkan logging
+      logging: console.log,
+    })
 
     if (!user) {
+      console.log('User not found for email:', email)
       return res.status(404).json({ error: 'User not found' })
     }
 
@@ -213,6 +230,7 @@ exports.login = async (req, res) => {
     const isPasswordValid = await bcrypt.compare(password, user.password)
 
     if (!isPasswordValid) {
+      console.log('Invalid password for email:', email)
       return res.status(401).json({ error: 'Invalid email or password' })
     }
 
@@ -220,23 +238,18 @@ exports.login = async (req, res) => {
     const accessToken = generateAccessToken(user)
     const refreshToken = generateRefreshToken(user)
 
-    // Simpan refresh token DENGAN BENAR
+    // Simpan refresh token
     await user.update(
+      { refreshToken },
       {
-        refreshToken: refreshToken,
-      },
-      {
-        // Pastikan update berhasil
         hooks: true,
         validate: true,
       },
     )
 
-    // Log untuk debugging
-    console.log('Login - Tokens Generated:', {
-      accessToken,
-      refreshToken,
+    console.log('Login successful:', {
       userId: user.id,
+      email: user.email,
     })
 
     res.status(200).json({
@@ -347,6 +360,7 @@ exports.getUserProfile = async (req, res) => {
       username: user.username,
       email: user.email,
       profile_picture: user.profile_picture,
+      roles: user.roles,
       // Tambahkan field lain sesuai kebutuhan
     })
   } catch (error) {

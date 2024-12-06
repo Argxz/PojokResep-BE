@@ -5,7 +5,13 @@ const fsPromises = require('fs').promises
 
 exports.getAllRecipes = async (req, res) => {
   try {
-    const recipes = await Recipe.findAll({
+    const page = parseInt(req.query.page) || 1
+    const limit = parseInt(req.query.limit) || 8
+    const offset = (page - 1) * limit
+
+    console.log('Pagination:', { page, limit, offset }) // Log pagination details
+
+    const { count, rows: recipes } = await Recipe.findAndCountAll({
       include: [
         {
           model: User,
@@ -18,11 +24,25 @@ exports.getAllRecipes = async (req, res) => {
           attributes: ['name'],
         },
       ],
-      order: [['createdAt', 'DESC']], // Urutkan dari yang terbaru
+      order: [['createdAt', 'DESC']],
+      limit: limit,
+      offset: offset,
     })
-    res.json({ status: 'OK', data: recipes })
+
+    const totalPages = Math.ceil(count / limit)
+
+    res.json({
+      recipes: recipes,
+      currentPage: page,
+      totalPages: totalPages,
+      totalRecipes: count,
+    })
   } catch (error) {
-    res.status(500).json({ error: error.message })
+    console.error('Server Error:', error) // Log server errors
+    res.status(500).json({
+      message: 'Error fetching recipes',
+      error: error.message,
+    })
   }
 }
 
