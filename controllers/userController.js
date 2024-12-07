@@ -217,8 +217,6 @@ exports.login = async (req, res) => {
     // Cek apakah user dengan email tersebut ada
     const user = await User.findOne({
       where: { email },
-      // Tambahkan logging
-      logging: console.log,
     })
 
     if (!user) {
@@ -234,6 +232,9 @@ exports.login = async (req, res) => {
       return res.status(401).json({ error: 'Invalid email or password' })
     }
 
+    // Pastikan roles selalu ada
+    const userRoles = user.roles || 'user'
+
     // Generate tokens
     const accessToken = generateAccessToken(user)
     const refreshToken = generateRefreshToken(user)
@@ -247,17 +248,13 @@ exports.login = async (req, res) => {
       },
     )
 
-    console.log('Login successful:', {
-      userId: user.id,
-      email: user.email,
-    })
-
     res.status(200).json({
       message: 'Login successful',
       data: {
         id: user.id,
         username: user.username,
         email: user.email,
+        roles: userRoles, // Tambahkan roles di response
         accessToken,
         refreshToken,
       },
@@ -361,7 +358,6 @@ exports.getUserProfile = async (req, res) => {
       email: user.email,
       profile_picture: user.profile_picture,
       roles: user.roles,
-      // Tambahkan field lain sesuai kebutuhan
     })
   } catch (error) {
     console.error('Error fetching user profile:', error)
@@ -474,9 +470,17 @@ exports.verifyToken = async (req, res) => {
 }
 
 const generateAccessToken = (user) => {
-  return jwt.sign({ id: user.id, email: user.email }, process.env.JWT_SECRET, {
-    expiresIn: '1h',
-  })
+  return jwt.sign(
+    {
+      id: user.id,
+      email: user.email,
+      roles: user.roles || 'user', // Pastikan selalu ada roles
+    },
+    process.env.JWT_SECRET,
+    {
+      expiresIn: '1h',
+    },
+  )
 }
 
 const generateRefreshToken = (user) => {
@@ -484,6 +488,7 @@ const generateRefreshToken = (user) => {
     {
       id: user.id,
       email: user.email,
+      roles: user.roles || 'user', // Pastikan selalu ada roles
     },
     process.env.REFRESH_TOKEN_SECRET,
     {

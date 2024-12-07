@@ -28,7 +28,11 @@ exports.authenticateToken = async (req, res, next) => {
         })
       }
 
-      req.user = user.toJSON()
+      // Gabungkan decoded token dengan data user
+      req.user = {
+        ...user.toJSON(),
+        roles: decoded.roles || 'user', // Pastikan roles selalu ada
+      }
       next()
     } catch (error) {
       if (error.name === 'TokenExpiredError') {
@@ -58,12 +62,16 @@ exports.authenticateToken = async (req, res, next) => {
   }
 }
 
-// Middleware untuk otorisasi role
-exports.authorizeRole = (roles) => {
+// Update authorize role middleware
+exports.authorizeRole = (allowedRoles) => {
   return (req, res, next) => {
-    if (!roles.includes(req.user.role)) {
+    const userRoles = req.user.roles || 'user'
+
+    if (!allowedRoles.includes(userRoles)) {
       return res.status(403).json({
         message: 'Akses ditolak',
+        userRole: userRoles,
+        allowedRoles: allowedRoles,
       })
     }
     next()
