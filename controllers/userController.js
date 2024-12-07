@@ -491,3 +491,60 @@ const generateRefreshToken = (user) => {
     },
   )
 }
+
+exports.deleteUser = async (req, res) => {
+  const { id } = req.params
+
+  // Mulai transaksi
+  const transaction = await sequelize.transaction()
+
+  try {
+    // Cari user terlebih dahulu
+    const user = await User.findByPk(id, { transaction })
+
+    if (!user) {
+      await transaction.rollback()
+      return res.status(404).json({
+        status: 'error',
+        message: 'User tidak ditemukan',
+      })
+    }
+
+    // Hapus semua data terkait user dalam transaksi
+    await Recipe.destroy({
+      where: { user_id: id },
+      transaction,
+    })
+
+    await Comment.destroy({
+      where: { user_id: id },
+      transaction,
+    })
+
+    await Rating.destroy({
+      where: { user_id: id },
+      transaction,
+    })
+
+    // Hapus user
+    await user.destroy({ transaction })
+
+    // Commit transaksi
+    await transaction.commit()
+
+    res.status(200).json({
+      status: 'success',
+      message: 'User berhasil dihapus',
+    })
+  } catch (error) {
+    // Rollback transaksi jika ada error
+    await transaction.rollback()
+
+    console.error(error)
+    res.status(500).json({
+      status: 'error',
+      message: 'Gagal menghapus user',
+      error: error.message,
+    })
+  }
+}

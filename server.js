@@ -14,7 +14,7 @@ app.use(express.json())
 app.get('/', (req, res) => {
   res.send({
     message: 'Hallo 👋',
-    status: 'API ready to use 🚀',
+    status: 'API Pojok Resep Siap Digunakan !🚀',
   })
 })
 

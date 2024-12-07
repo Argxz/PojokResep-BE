@@ -14,14 +14,17 @@ module.exports = (sequelize, DataTypes) => {
       User.hasMany(models.Recipe, {
         foreignKey: 'user_id',
         as: 'recipes',
+        onDelete: 'CASCADE',
       })
       User.hasMany(models.Comment, {
         foreignKey: 'user_id',
         as: 'comments',
+        onDelete: 'CASCADE',
       })
       User.hasMany(models.Rating, {
         foreignKey: 'user_id',
         as: 'ratings',
+        onDelete: 'CASCADE',
       })
     }
   }
