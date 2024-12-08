@@ -77,8 +77,7 @@ exports.getRecipeById = async (req, res) => {
 
 exports.getRecipesByUserId = async (req, res) => {
   try {
-    const userId = req.user.id // Pastikan ini benar
-    console.log('Received User ID:', userId) // Log user ID
+    const userId = req.user.id
 
     if (!userId) {
       return res.status(400).json({
@@ -89,20 +88,20 @@ exports.getRecipesByUserId = async (req, res) => {
     const recipes = await Recipe.findAll({
       where: {
         user_id: userId,
-      }, // Menentukan resep milik user tertentu
+      },
       include: [
         {
           model: User,
           as: 'user',
-          attributes: ['username', 'profile_picture'], // Mengambil hanya atribut username
+          attributes: ['username', 'profile_picture'],
         },
         {
           model: Categories,
           as: 'category',
-          attributes: ['name'], // Mengambil hanya atribut name
+          attributes: ['name'],
         },
       ],
-      order: [['createdAt', 'DESC']], // Urutkan dari yang terbaru
+      order: [['createdAt', 'DESC']],
     })
 
     if (!recipes || recipes.length === 0) {
@@ -111,11 +110,17 @@ exports.getRecipesByUserId = async (req, res) => {
 
     return res.status(200).json(recipes)
   } catch (error) {
-    console.error('Error retrieving user recipes:', error)
-    return res.status(500).json({
-      error: 'An error occurred while retrieving user recipes',
-      details: error.message,
-    })
+    // Cek apakah error bukan 404
+    if (error.status !== 404) {
+      console.error('Error retrieving user recipes:', error)
+      return res.status(500).json({
+        error: 'An error occurred while retrieving user recipes',
+        details: error.message,
+      })
+    }
+
+    // Untuk error 404, kembalikan response tanpa log
+    return res.status(404).json({ error: 'No recipes found for this user' })
   }
 }
 
