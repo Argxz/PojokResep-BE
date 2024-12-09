@@ -470,15 +470,19 @@ exports.verifyToken = async (req, res) => {
 }
 
 const generateAccessToken = (user) => {
+  // Pastikan JWT_SECRET ada, jika tidak gunakan fallback
+  const secret = process.env.JWT_SECRET
+
   return jwt.sign(
     {
       id: user.id,
       email: user.email,
       roles: user.roles || 'user', // Pastikan selalu ada roles
     },
-    process.env.JWT_SECRET,
+    secret, // Gunakan secret yang sudah dipastikan
     {
       expiresIn: '1h',
+      algorithm: 'HS256', // Tambahkan algoritma enkripsi
     },
   )
 }
