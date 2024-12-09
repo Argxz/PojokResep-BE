@@ -60,7 +60,7 @@ const uploadProfilePicture = async (req, res) => {
     if (!user) {
       // Hapus file yang baru diupload jika user tidak ditemukan
       await fsPromises.unlink(req.file.path)
-      return res.status(404).json({ message: 'User not found' })
+      return res.status(404).json({ message: 'Akun anda tidak ditemukan' })
     }
 
     // Hapus foto profil lama jika ada
@@ -220,16 +220,16 @@ exports.login = async (req, res) => {
     })
 
     if (!user) {
-      console.log('User not found for email:', email)
-      return res.status(404).json({ error: 'User not found' })
+      console.log('Akun anda tidak ditemukan pada email:', email)
+      return res.status(404).json({ error: 'Akun anda tidak ditemukan' })
     }
 
     // Verifikasi password
     const isPasswordValid = await bcrypt.compare(password, user.password)
 
     if (!isPasswordValid) {
-      console.log('Invalid password for email:', email)
-      return res.status(401).json({ error: 'Invalid email or password' })
+      console.log('Password anda salah pada email:', email)
+      return res.status(401).json({ error: 'Password yang anda masukan salah' })
     }
 
     // Pastikan roles selalu ada
@@ -350,7 +350,7 @@ exports.getUserProfile = async (req, res) => {
     })
 
     if (!user) {
-      return res.status(404).json({ message: 'User not found' })
+      return res.status(404).json({ message: 'Akun anda tidak ditemukan' })
     }
 
     res.status(200).json({

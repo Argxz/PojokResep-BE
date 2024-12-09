@@ -104,23 +104,20 @@ exports.getRecipesByUserId = async (req, res) => {
       order: [['createdAt', 'DESC']],
     })
 
-    if (!recipes || recipes.length === 0) {
-      return res.status(404).json({ error: 'No recipes found for this user' })
-    }
-
-    return res.status(200).json(recipes)
+    // Selalu kembalikan 200 dengan array kosong jika tidak ada resep
+    return res.status(200).json({
+      data: recipes,
+      message:
+        recipes.length > 0
+          ? 'Recipes found successfully'
+          : 'No recipes found for this user',
+    })
   } catch (error) {
-    // Cek apakah error bukan 404
-    if (error.status !== 404) {
-      console.error('Error retrieving user recipes:', error)
-      return res.status(500).json({
-        error: 'An error occurred while retrieving user recipes',
-        details: error.message,
-      })
-    }
-
-    // Untuk error 404, kembalikan response tanpa log
-    return res.status(404).json({ error: 'No recipes found for this user' })
+    console.error('Error retrieving user recipes:', error)
+    return res.status(500).json({
+      error: 'An error occurred while retrieving user recipes',
+      details: error.message,
+    })
   }
 }
 

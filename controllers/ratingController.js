@@ -57,7 +57,7 @@ exports.getRatingByRecipeId = async (req, res) => {
       })
     }
 
-    // Kembalikan data komentar
+    // Kembalikan data rating
     res.status(200).json(ratings)
   } catch (error) {
     console.error(error)
@@ -124,15 +124,10 @@ exports.getUserRatingForRecipe = async (req, res) => {
       attributes: ['value'],
     })
 
-    if (userRating) {
-      return res.status(200).json({
-        userRating: userRating.value,
-      })
-    }
-
-    // Jika belum pernah rating
-    return res.status(404).json({
-      message: 'No rating found',
+    // Ubah dari status 404 menjadi 200 dengan userRating null
+    return res.status(200).json({
+      userRating: userRating ? userRating.value : null,
+      message: userRating ? 'Rating found' : 'No rating found',
     })
   } catch (error) {
     console.error(error)

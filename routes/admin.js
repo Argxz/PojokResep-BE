@@ -14,6 +14,7 @@ router.get(
   adminController.getDashboardData,
 )
 
+//comments
 router.get(
   '/comments',
   authenticateToken,
@@ -26,6 +27,36 @@ router.delete(
   authenticateToken,
   authorizeRole(['admin']),
   adminController.deleteComment,
+)
+
+//recipes
+router.get(
+  '/recipes',
+  authenticateToken,
+  authorizeRole(['admin']),
+  adminController.getAllRecipes,
+)
+
+router.delete(
+  '/recipes/:id',
+  authenticateToken,
+  authorizeRole(['admin']),
+  adminController.deleteRecipe,
+)
+
+//users
+router.get(
+  '/users',
+  authenticateToken,
+  authorizeRole(['admin']),
+  adminController.getAllUsers,
+)
+
+router.delete(
+  '/users/:id',
+  authenticateToken,
+  authorizeRole(['admin']),
+  adminController.deleteUser,
 )
 
 module.exports = router
