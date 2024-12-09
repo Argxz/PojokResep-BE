@@ -7,7 +7,13 @@ const port = process.env.PORT
 const routes = require('./routes')
 const path = require('path')
 
-app.use(cors())
+app.use(
+  cors({
+    origin: ['http://localhost:5173', 'https://domain-frontend-anda.com'],
+    methods: ['GET', 'POST', 'PUT', 'DELETE'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+  }),
+)
 app.use(morgan('combined'))
 app.use(express.json())
 
