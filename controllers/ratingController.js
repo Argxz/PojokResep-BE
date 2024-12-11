@@ -1,7 +1,13 @@
 const { Rating, Recipe, User } = require('../models')
 
+/**
+ * Mengambil semua rating dengan informasi resep dan pengguna
+ * @param {Object} req - Objek request
+ * @param {Object} res - Objek response
+ */
 exports.getAllRatings = async (req, res) => {
   try {
+    // Ambil semua rating dengan relasi resep dan pengguna
     const ratings = await Rating.findAll({
       include: [
         {
@@ -16,65 +22,108 @@ exports.getAllRatings = async (req, res) => {
         },
       ],
     })
+
+    // Kirim response dengan data rating
     res.json({ status: 'OK', data: ratings })
   } catch (error) {
-    res.status(500).json({ error: error.message })
+    // Tangani error
+    res.status(500).json({
+      status: 'error',
+      message: 'Gagal mengambil rating',
+      error: error.message,
+    })
   }
 }
 
+/**
+ * Mengambil rating berdasarkan ID resep
+ * @param {Object} req - Objek request
+ * @param {Object} res - Objek response
+ */
 exports.getRatingByRecipeId = async (req, res) => {
   try {
     const { recipe_id } = req.params
 
     // Validasi input
     if (!recipe_id) {
-      return res.status(400).json({ error: 'recipe_id is required' })
+      return res.status(400).json({
+        status: 'error',
+        message: 'recipe_id diperlukan',
+      })
     }
 
-    // Cari komentar berdasarkan recipe_id
+    // Ambil rating berdasarkan recipe_id
     const ratings = await Rating.findAll({
       where: { recipe_id },
       include: [
         {
           model: Recipe,
           as: 'recipe',
-          attributes: ['title'], // Hanya mengambil atribut "title"
+          attributes: ['title'],
         },
         {
           model: User,
           as: 'user',
-          attributes: ['username'], // Hanya mengambil atribut "username"
+          attributes: ['username'],
         },
-      ], // Sequelize akan otomatis memetakan
+      ],
     })
 
-    // Jika tidak ada ratings, kembalikan status 200 dengan data kosong
+    // Jika tidak ada ratings
     if (ratings.length === 0) {
       return res.status(200).json({
+        status: 'OK',
         data: [],
-        message: 'No ratings found for this recipe',
+        message: 'Tidak ada rating untuk resep ini',
         averageRating: 0,
       })
     }
 
+    // Hitung rata-rata rating
+    const averageRating =
+      ratings.reduce((sum, rating) => sum + rating.value, 0) / ratings.length
+
     // Kembalikan data rating
-    res.status(200).json(ratings)
+    res.status(200).json({
+      status: 'OK',
+      data: ratings,
+      averageRating: averageRating.toFixed(2),
+    })
   } catch (error) {
+    // Tangani error
     console.error(error)
-    res.status(500).json({ error: 'An error occurred while fetching ratings' })
+    res.status(500).json({
+      status: 'error',
+      message: 'Gagal mengambil rating',
+      error: error.message,
+    })
   }
 }
 
+/**
+ * Membuat atau memperbarui rating
+ * @param {Object} req - Objek request
+ * @param {Object} res - Objek response
+ */
 exports.createRating = async (req, res) => {
   const { recipe_id, value } = req.body
-  const user_id = req.user.id // Ambil dari token
+  const user_id = req.user.id
 
   try {
     // Cek apakah user adalah pemilik resep
     const recipe = await Recipe.findByPk(recipe_id)
     if (recipe.user_id === user_id) {
       return res.status(403).json({
-        error: 'Anda tidak dapat memberi rating pada resep sendiri',
+        status: 'error',
+        message: 'Anda tidak dapat memberi rating pada resep sendiri',
+      })
+    }
+
+    // Validasi nilai rating
+    if (value < 1 || value > 5) {
+      return res.status(400).json({
+        status: 'error',
+        message: 'Nilai rating harus antara 1 dan 5',
       })
     }
 
@@ -89,7 +138,8 @@ exports.createRating = async (req, res) => {
       await existingRating.save()
 
       return res.status(200).json({
-        message: 'Rating updated successfully',
+        status: 'OK',
+        message: 'Rating berhasil diperbarui',
         data: existingRating,
       })
     }
@@ -102,14 +152,26 @@ exports.createRating = async (req, res) => {
     })
 
     res.status(201).json({
-      message: 'Rating created successfully',
+      status: 'OK',
+      message: 'Rating berhasil dibuat',
       data: newRating,
     })
   } catch (error) {
+    // Tangani error
     console.error(error)
-    res.status(500).json({ error: 'An error occurred while creating rating' })
+    res.status(500).json({
+      status: 'error',
+      message: 'Gagal membuat rating',
+      error: error.message,
+    })
   }
 }
+
+/**
+ * Mengambil rating pengguna untuk resep tertentu
+ * @param {Object} req - Objek request
+ * @param {Object} res - Objek response
+ */
 exports.getUserRatingForRecipe = async (req, res) => {
   try {
     const { recipe_id } = req.params
@@ -124,96 +186,128 @@ exports.getUserRatingForRecipe = async (req, res) => {
       attributes: ['value'],
     })
 
-    // Ubah dari status 404 menjadi 200 dengan userRating null
+    // Kembalikan rating pengguna
     return res.status(200).json({
+      status: 'OK',
       userRating: userRating ? userRating.value : null,
-      message: userRating ? 'Rating found' : 'No rating found',
+      message: userRating ? 'Rating ditemukan' : 'Tidak ada rating',
     })
   } catch (error) {
+    // Tangani error
     console.error(error)
     res.status(500).json({
-      error: 'An error occurred while fetching user rating',
+      status: 'error',
+      message: 'Gagal mengambil rating pengguna',
+      error: error.message,
     })
   }
 }
+
+/**
+ * Memperbarui rating pengguna
+ * @param {Object} req - Objek request
+ * @param {Object} res - Objek response
+ */
 exports.updateRatingByUser = async (req, res) => {
   try {
-    const { recipe_id } = req.params // Mendapatkan recipe_id dari parameter
-    const { user_id, value } = req.body // Mendapatkan user_id dan value dari body
+    const { recipe_id } = req.params
+    const { user_id, value } = req.body
 
     // Validasi input
     if (!recipe_id || !user_id || value === undefined) {
-      return res
-        .status(400)
-        .json({ error: 'recipe_id, user_id, and value are required' })
+      return res.status(400).json({
+        status: 'error',
+        message: 'recipe_id, user_id, dan value diperlukan',
+      })
     }
 
+    // Validasi nilai rating
     if (value < 1 || value > 5) {
-      return res
-        .status(400)
-        .json({ error: 'Rating value must be between 1 and 5' })
+      return res.status(400).json({
+        status: 'error',
+        message: 'Nilai rating harus antara 1 dan 5',
+      })
     }
 
     // Cari rating berdasarkan recipe_id dan user_id
-    const ratings = await Rating.findOne({
+    const rating = await Rating.findOne({
       where: { recipe_id, user_id },
     })
 
-    if (!ratings) {
+    if (!rating) {
       return res.status(404).json({
-        error: 'Rating not found or you are not authorized to update it',
+        status: 'error',
+        message: 'Rating tidak ditemukan atau Anda tidak memiliki otorisasi',
       })
     }
 
     // Update hanya value
-    ratings.value = value
-    await ratings.save()
+    rating.value = value
+    await rating.save()
 
     return res.status(200).json({
-      message: 'Rating updated successfully',
-      data: ratings,
+      status: 'OK',
+      message: 'Rating berhasil diperbarui',
+      data: rating,
     })
   } catch (error) {
+    // Tangani error
     console.error(error)
-    return res
-      .status(500)
-      .json({ error: 'An error occurred while updating the rating' })
+    return res.status(500).json({
+      status: 'error',
+      message: 'Gagal memperbarui rating',
+      error: error.message,
+    })
   }
 }
 
+/**
+ * Menghapus rating
+ * @param {Object} req - Objek request
+ * @param {Object} res - Objek response
+ */
 exports.deleteRating = async (req, res) => {
-  const { id } = req.params // Ambil id dari parameter URL
+  const { id } = req.params
 
   try {
-    // Cari komentar berdasarkan ID
-    const ratings = await Rating.findByPk(id)
+    // Cari rating berdasarkan ID
+    const rating = await Rating.findByPk(id)
 
-    // Jika komentar tidak ditemukan
-    if (!ratings) {
-      return res.status(404).json({ error: 'ratings not found' })
+    // Jika rating tidak ditemukan
+    if (!rating) {
+      return res.status(404).json({
+        status: 'error',
+        message: 'Rating tidak ditemukan',
+      })
     }
 
-    // Hapus komentar
-    await ratings.destroy()
+    // Hapus rating
+    await rating.destroy()
 
     // Kirim respons sukses
     res.status(200).json({
-      message: 'ratings deleted successfully',
-      data: ratings, // Jika ingin mengembalikan detail komentar yang dihapus
+      status: 'OK',
+      message: 'Rating berhasil dihapus',
+      data: rating,
     })
   } catch (error) {
-    console.error('Error deleting ratings:', error)
+    // Tangani error
+    console.error('Error menghapus rating:', error)
 
-    // Cek apakah error terkait constraint (misalnya foreign key)
+    // Cek apakah error terkait constraint
     if (error.name === 'SequelizeForeignKeyConstraintError') {
       return res.status(400).json({
-        error: 'Cannot delete ratings. It is being used by other records.',
+        status: 'error',
+        message:
+          'Tidak dapat menghapus rating. Sedang digunakan oleh catatan lain.',
       })
     }
 
     // Error umum
     res.status(500).json({
-      error: 'An error occurred while deleting the ratings',
+      status: 'error',
+      message: 'Gagal menghapus rating',
+      error: error.message,
     })
   }
 }
