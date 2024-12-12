@@ -79,18 +79,23 @@ exports.getRatingByRecipeId = async (req, res) => {
       })
     }
 
-    // Hitung rata-rata rating
     const averageRating =
       ratings.reduce((sum, rating) => sum + rating.value, 0) / ratings.length
 
     // Kembalikan data rating
     res.status(200).json({
       status: 'OK',
-      data: ratings,
+      data: ratings.map((rating) => ({
+        id: rating.id,
+        value: rating.value,
+        recipe_id: rating.recipe_id,
+        user_id: rating.user_id,
+        createdAt: rating.createdAt,
+        updatedAt: rating.updatedAt,
+      })),
       averageRating: averageRating.toFixed(2),
     })
   } catch (error) {
-    // Tangani error
     console.error(error)
     res.status(500).json({
       status: 'error',
