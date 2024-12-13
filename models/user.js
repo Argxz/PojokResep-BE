@@ -10,17 +10,19 @@ module.exports = (sequelize, DataTypes) => {
      * The `models/index` file will call this method automatically.
      */
     static associate(models) {
-      // A user can have many recipes
+      // User punya banyak resep
       User.hasMany(models.Recipe, {
         foreignKey: 'user_id',
         as: 'recipes',
         onDelete: 'CASCADE',
       })
+      //User punya banyak komentar
       User.hasMany(models.Comment, {
         foreignKey: 'user_id',
         as: 'comments',
         onDelete: 'CASCADE',
       })
+      //User punya banyak rating
       User.hasMany(models.Rating, {
         foreignKey: 'user_id',
         as: 'ratings',
@@ -37,7 +39,7 @@ module.exports = (sequelize, DataTypes) => {
       },
       email: {
         type: DataTypes.STRING,
-        unique: true, // Tambahkan validasi unique dari kode kedua
+        unique: true,
         allowNull: false,
       },
       password: {
@@ -63,7 +65,7 @@ module.exports = (sequelize, DataTypes) => {
       tableName: 'Users',
       hooks: {
         beforeCreate: async (user) => {
-          user.password = await bcrypt.hash(user.password, 10) // Hash password otomatis di hook
+          user.password = await bcrypt.hash(user.password, 10)
         },
       },
     },

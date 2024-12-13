@@ -18,11 +18,13 @@ module.exports = (sequelize, DataTypes) => {
         foreignKey: 'category_id',
         as: 'category',
       })
+      //Resep punya banyak komentar
       Recipe.hasMany(models.Comment, {
         foreignKey: 'recipe_id',
         as: 'comment',
         onDelete: 'CASCADE',
       })
+      //Resep punya banyak rating
       Recipe.hasMany(models.Rating, {
         foreignKey: 'recipe_id',
         as: 'rating',

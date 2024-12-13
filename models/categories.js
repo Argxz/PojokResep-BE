@@ -8,7 +8,7 @@ module.exports = (sequelize, DataTypes) => {
      * The `models/index` file will call this method automatically.
      */
     static associate(models) {
-      // A category can have many recipes
+      //Kategori punya banyak resep
       Categories.hasMany(models.Recipe, {
         foreignKey: 'category_id',
         as: 'recipes',
@@ -24,7 +24,6 @@ module.exports = (sequelize, DataTypes) => {
       sequelize,
       modelName: 'Categories',
       tableName: 'Categories',
-      // timestamps: true,
     },
   )
   return Categories
