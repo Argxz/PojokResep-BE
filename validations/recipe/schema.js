@@ -2,17 +2,15 @@ const Joi = require('joi')
 
 exports.create = Joi.object().keys({
   user_id: Joi.number().integer().required(),
-  title: Joi.string().trim().min(3).max(255).required(), // Tambahkan batasan panjang
-  description: Joi.string().trim().min(10).max(500).required(), // Tambahkan batasan panjang
-  ingredients: Joi.string().trim().min(10).required(), // Minimal panjang ingredients
-  instructions: Joi.string().trim().min(10).required(), // Minimal panjang instructions
-  cooking_time: Joi.number().integer().min(1).required(), // Ubah ke number
-  serving_size: Joi.number().integer().min(1).required(), // Ubah ke number
-  difficulty_level: Joi.string()
-    .valid('Mudah', 'Menengah', 'Sulit') // Sesuaikan dengan opsi di frontend
-    .required(),
+  title: Joi.string().trim().min(3).max(255).required(),
+  description: Joi.string().trim().min(10).max(500).required(),
+  ingredients: Joi.string().trim().min(10).required(),
+  instructions: Joi.string().trim().min(10).required(),
+  cooking_time: Joi.number().integer().min(1).required(),
+  serving_size: Joi.number().integer().min(1).required(),
+  difficulty_level: Joi.string().valid('Mudah', 'Menengah', 'Sulit').required(),
   category_id: Joi.number().integer().required(),
-  image_url: Joi.string().allow(null), // Opsional
+  image_url: Joi.string().allow(null),
 })
 
 exports.update = Joi.object()
