@@ -9,7 +9,7 @@ const path = require('path')
 
 app.use(
   cors({
-    origin: ['http://localhost:5173', 'https://domain-frontend-anda.com'],
+    origin: ['http://localhost:5173'],
     methods: ['GET', 'POST', 'PUT', 'DELETE'],
     allowedHeaders: ['Content-Type', 'Authorization'],
   }),
