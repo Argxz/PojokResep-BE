@@ -202,3 +202,7 @@ CREATE TABLE tb_ratings (
 ### Ratings
 
 - **POST** `/api/v1/ratings`: Add a rating to a recipe (Authenticated)
+
+## API Documentation
+
+[Postman Documentation](https://documenter.getpostman.com/view/39892424/2sAYHwH4HE)
