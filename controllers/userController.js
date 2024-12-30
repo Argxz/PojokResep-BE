@@ -197,8 +197,6 @@ exports.register = async (req, res) => {
 exports.login = async (req, res) => {
   const { email, password } = req.body
 
-  console.log('Login Request:', { email, password }) // Logging input
-
   // Validasi email menggunakan regex
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
   if (!email) {
